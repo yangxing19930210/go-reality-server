@@ -12,8 +12,12 @@ install -m 0755 "$BIN" /usr/local/bin/go-reality-server
 
 echo "==> 创建配置目录 $CONF_DIR"
 mkdir -p "$CONF_DIR"
+CONFIG_SRC="$SCRIPT_DIR/config.example.yaml"
+if [[ ! -f "$CONFIG_SRC" ]]; then
+  CONFIG_SRC="$SCRIPT_DIR/../config.example.yaml"
+fi
 if [[ ! -f "$CONF_DIR/config.yaml" ]]; then
-  install -m 0600 "$SCRIPT_DIR/config.example.yaml" "$CONF_DIR/config.yaml"
+  install -m 0644 "$CONFIG_SRC" "$CONF_DIR/config.yaml"
   echo "    已写入示例配置,请编辑 $CONF_DIR/config.yaml 填入密钥"
 fi
 if [[ ! -f "$CONF_DIR/env" ]]; then
@@ -24,11 +28,11 @@ chmod 0600 "$CONF_DIR/env"
 echo "==> 安装 systemd unit"
 UNIT_SRC="$SCRIPT_DIR/go-reality.service"
 if [[ ! -f "$UNIT_SRC" ]]; then
-  UNIT_SRC="$SCRIPT_DIR/deploy/systemd/go-reality.service"
+  UNIT_SRC="$SCRIPT_DIR/systemd/go-reality.service"
 fi
 install -m 0644 "$UNIT_SRC" /etc/systemd/system/go-reality.service
 systemctl daemon-reload
-systemctl enable --now go-reality
+systemctl enable go-reality
 
-echo "==> 完成。填入密钥后执行: sudo systemctl restart go-reality"
+echo "==> 完成。填入密钥后执行: sudo systemctl start go-reality"
 echo "    查看日志: journalctl -u go-reality -f -n 50"
