@@ -1,0 +1,22 @@
+# go-reality-server 示例配置
+# 复制为 config.yaml 并填入密钥:go run ./cmd/server keys generate
+listen_address: "::"
+listen_port: 443
+
+vless:
+  uuid: ""                    # 必填,UUID 格式
+  flow: ""                    # REALITY 不使用 flow,保持为空
+  short_id: ""                # 必填,16 个十六进制字符
+
+reality:
+  private_key: ""             # 必填,X25519 私钥(base64url 或 std)
+  dest: "www.microsoft.com:443"   # 握手伪装目标
+  server_names: ["www.microsoft.com"]
+  short_ids: []               # 留空则复用 vless.short_id
+  x25519_pub: ""              # 非必填,仅用于生成客户端分享链接
+
+http_api:
+  listen_address: "127.0.0.1" # 只监听本机
+  listen_port: 9090           # 0 = 关闭
+
+log_level: "info"             # debug | info | warn | error
