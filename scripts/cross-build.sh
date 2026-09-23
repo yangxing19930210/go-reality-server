@@ -3,8 +3,8 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-go build -trimpath -ldflags="-s -w" -o bin/go-reality-server-linux-amd64 ./cmd/server
+GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o bin/go-reality-server-linux-amd64 ./cmd/server
 echo "built bin/go-reality-server-linux-amd64"
 
-go build -trimpath -ldflags="-s -w" -o bin/go-reality-server-linux-arm64 ./cmd/server
+GOOS=linux GOARCH=arm64 go build -trimpath -ldflags="-s -w" -o bin/go-reality-server-linux-arm64 ./cmd/server
 echo "built bin/go-reality-server-linux-arm64"
