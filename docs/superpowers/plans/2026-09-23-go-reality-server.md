@@ -2208,3 +2208,4 @@ go test -tags=integration -count=1 ./internal/proxy/ -run TestIntegrationEgress 
 1. **GOPROXY 必须指向阿里云镜像**:本机无法直连 proxy.golang.org 与 github git 协议。所有 `go get` / `go mod tidy` 命令加 `GOPROXY=https://mirrors.aliyun.com/goproxy,direct`(实测完整依赖树可下载并编译通过,go.sum 校验经代理 sumdb 正常)。
 2. **xray-core 的 Go module 版本号是 `v1.260327.0`**:仓库 release 是 v26.3.27,但模块路径无 `/v26` 后缀,xray 官方为 Go module 消费者发布了平行 tag `v1.260327.0`(即 2026-03-27)。`go get ...@v26.3.27` 会解析为该版本。go.mod 中固定 `v1.260327.0`,API 与计划一致(已验证 `core.New`、`reality.Config.ShortIds`、`uuid.New`)。
 3. 本机模块缓存已预填充完整 xray-core 依赖树,后续任务无需重复下载。
+4. Task 3 执行时发现三处 API 与计划不符(已按 v1.260327.0 发布版修正,详见 .superpowers/sdd/progress.md):vlessinbound.Config 字段是 `Clients` 非 `Users`;`TypedMessage` 无 `UnmarshalTo` 方法;`app.go` 必须 blank import `app/proxyman/inbound` 与 `app/proxyman/outbound`(xray 的 config 注册依赖 init,缺了 core.New 会报 not registered)。
