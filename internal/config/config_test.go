@@ -87,6 +87,7 @@ func TestValidateErrors(t *testing.T) {
 		{"bad private key", func(c *ServerConfig) { c.Reality.PrivateKey = "!!!" }},
 		{"port out of range", func(c *ServerConfig) { c.ListenPort = 0 }},
 		{"bad flow", func(c *ServerConfig) { c.VLESS.Flow = "xtls-rxtls-splice" }},
+		{"vision flow rejected", func(c *ServerConfig) { c.VLESS.Flow = "xtls-rprx-vision" }},
 		{"empty server_names", func(c *ServerConfig) { c.Reality.ServerNames = []string{} }},
 	}
 	for _, tc := range cases {

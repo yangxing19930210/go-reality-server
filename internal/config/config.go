@@ -95,8 +95,8 @@ func (c *ServerConfig) Validate() error {
 	if !uuidPattern.MatchString(c.VLESS.UUID) {
 		return fmt.Errorf("vless.uuid %q is not a valid UUID", c.VLESS.UUID)
 	}
-	if c.VLESS.Flow != "" && c.VLESS.Flow != "xtls-rprx-vision" {
-		return fmt.Errorf("vless.flow %q unsupported (REALITY 应留空)", c.VLESS.Flow)
+	if c.VLESS.Flow != "" {
+		return fmt.Errorf("vless.flow %q is not allowed (REALITY 不使用 flow,保持为空)", c.VLESS.Flow)
 	}
 	if !shortIDPattern.MatchString(c.VLESS.ShortID) {
 		return fmt.Errorf("vless.short_id %q must be 16 hex chars", c.VLESS.ShortID)
