@@ -2200,3 +2200,11 @@ go test -tags=integration -count=1 ./internal/proxy/ -run TestIntegrationEgress 
 - **偏差记录**(已在 Global Constraints):Engine.Wait() 省略(API 不存在);私钥双编码兼容;metrics 不做 stats.Manager。
 - **占位符扫描**:无 TBD/TODO;所有代码块完整。
 - **类型一致性**:`config.ServerConfig`/`PrivateKeyBytes`/`ShortIDBytesList` 在 Task 1 定义、Task 3/4 消费,签名一致;`GenerateShareLink` 参数顺序在 Task 2 定义、Task 6 消费一致;`httpapi.EngineState` 与 `Engine.IsReady()` 匹配。
+
+---
+
+## 执行补充说明(2026-09-23,执行前实测)
+
+1. **GOPROXY 必须指向阿里云镜像**:本机无法直连 proxy.golang.org 与 github git 协议。所有 `go get` / `go mod tidy` 命令加 `GOPROXY=https://mirrors.aliyun.com/goproxy,direct`(实测完整依赖树可下载并编译通过,go.sum 校验经代理 sumdb 正常)。
+2. **xray-core 的 Go module 版本号是 `v1.260327.0`**:仓库 release 是 v26.3.27,但模块路径无 `/v26` 后缀,xray 官方为 Go module 消费者发布了平行 tag `v1.260327.0`(即 2026-03-27)。`go get ...@v26.3.27` 会解析为该版本。go.mod 中固定 `v1.260327.0`,API 与计划一致(已验证 `core.New`、`reality.Config.ShortIds`、`uuid.New`)。
+3. 本机模块缓存已预填充完整 xray-core 依赖树,后续任务无需重复下载。
