@@ -81,3 +81,26 @@ func TestMetrics(t *testing.T) {
 		t.Error("engine gauge should be 1 when ready")
 	}
 }
+
+func TestNewWithDefaultRegistererDoesNotPanic(t *testing.T) {
+	// 生产路径:registerer 传 nil → DefaultRegisterer(其 init 已注册 GoCollector)。
+	// 修复前这里会因重复注册 panic。
+	srv := New("127.0.0.1:0", mockEngine{ready: true}, nil)
+	if srv == nil {
+		t.Fatal("New returned nil")
+	}
+	// 指标仍可正常抓取(就绪 gauge 存在)
+	gathered, err := prometheus.DefaultGatherer.Gather()
+	if err != nil {
+		t.Fatalf("Gather: %v", err)
+	}
+	found := false
+	for _, mf := range gathered {
+		if mf.GetName() == "go_reality_engine_ready" {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("go_reality_engine_ready metric missing from default gatherer")
+	}
+}

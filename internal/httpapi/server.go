@@ -3,6 +3,8 @@ package httpapi
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -26,10 +28,14 @@ func New(addr string, engine EngineState, registerer prometheus.Registerer) *Ser
 	if registerer == nil {
 		registerer = prometheus.DefaultRegisterer
 	}
-	registerer.MustRegister(
-		collectors.NewGoCollector(),
-		newReadyCollector(engine),
-	)
+	// GoCollector 可能已被注册(DefaultRegisterer 的 init 自带),已注册则跳过
+	if err := registerer.Register(collectors.NewGoCollector()); err != nil {
+		var already prometheus.AlreadyRegisteredError
+		if !errors.As(err, &already) {
+			panic(fmt.Errorf("register go collector: %w", err))
+		}
+	}
+	registerer.MustRegister(newReadyCollector(engine))
 
 	// promhttp 需要 Gatherer 而非 Registerer。常见实现(*prometheus.Registry、
 	// DefaultRegisterer)两者兼具;非 Gatherer 的 registerer 退化为默认 Gatherer。
