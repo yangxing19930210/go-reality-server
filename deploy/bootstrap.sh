@@ -58,6 +58,9 @@ if [[ ! -f "$CONF_DIR/config.yaml" ]]; then
 fi
 
 # env:密钥唯一落点。仅首次生成:0600 root,systemd 降权前以 root 读取
+# 警告判定用:脚本启动时 env 是否已存在(生成后无法区分本轮生成还是早已存在)
+ENV_PREEXISTED=0
+if [[ -f "$CONF_DIR/env" ]]; then ENV_PREEXISTED=1; fi
 if [[ ! -f "$CONF_DIR/env" ]]; then
   if [[ -z "$SERVER_ADDR" ]]; then
     SERVER_ADDR="$(ip route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="src"){print $(i+1); exit}}')" || true
@@ -77,7 +80,7 @@ if [[ ! -f "$CONF_DIR/env" ]]; then
   umask 022
 fi
 
-if [[ -f "$CONF_DIR/env" && "$SERVER_GIVEN" -eq 1 ]]; then
+if [[ "$ENV_PREEXISTED" -eq 1 && "$SERVER_GIVEN" -eq 1 ]]; then
   echo "⚠️ 密钥已存在($CONF_DIR/env),--server $SERVER_ADDR 未生效;如需换新密钥与链接:rm $CONF_DIR/env 后重跑" >&2
 fi
 
