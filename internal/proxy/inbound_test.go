@@ -121,15 +121,16 @@ func TestBuildFreedomOutbound(t *testing.T) {
 }
 
 func TestBuildAppMessages(t *testing.T) {
-	msgs := buildAppMessages()
-	if len(msgs) != 3 {
-		t.Fatalf("app messages = %d, want 3 (dispatcher, proxyman-in, proxyman-out)", len(msgs))
+	msgs := buildAppMessages("info")
+	if len(msgs) != 4 {
+		t.Fatalf("app messages = %d, want 4 (xray-log, dispatcher, proxyman-in, proxyman-out)", len(msgs))
 	}
 	types := map[string]bool{}
 	for _, m := range msgs {
 		types[m.Type] = true
 	}
 	for _, want := range []string{
+		"xray.app.log.Config",
 		"xray.app.dispatcher.Config",
 		"xray.app.proxyman.InboundConfig",
 		"xray.app.proxyman.OutboundConfig",

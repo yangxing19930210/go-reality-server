@@ -25,7 +25,7 @@ func NewEngine(cfg *config.ServerConfig) (*Engine, error) {
 		return nil, err
 	}
 	xrayConfig := &core.Config{
-		App:      buildAppMessages(),
+		App:      buildAppMessages(cfg.LogLevel),
 		Inbound:  []*core.InboundHandlerConfig{inboundConfig},
 		Outbound: []*core.OutboundHandlerConfig{buildFreedomOutbound()},
 	}

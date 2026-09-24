@@ -148,7 +148,7 @@ func startClientInstance(t *testing.T, serverPort int, uuidStr, shortID string, 
 	}
 
 	instance, err := core.New(&core.Config{
-		App:      buildAppMessages(),
+		App:      buildAppMessages("warn"), // 测试期让 xray 内部日志保持安静
 		Inbound:  []*core.InboundHandlerConfig{dokodemoInbound},
 		Outbound: []*core.OutboundHandlerConfig{vlessOutbound},
 	})

@@ -56,11 +56,24 @@ sudo systemctl restart go-reality
 
 `reality.dest` 需为支持 TLS 1.3 的目标;当前锁定依赖下 microsoft.com 不兼容(记录超限),默认 www.apple.com 已实测可用。
 
+### 安全建议
+
+私钥等敏感字段建议放 `/etc/go-reality/env`(权限 `0600`,由 systemd 在切换用户前以 root 读取,unit 已配置 `EnvironmentFile`),而非默认 `0644`、所有用户可读的 `config.yaml`:
+
+```
+REALITY_PRIVATE_KEY=<base64>
+VLESS_UUID=<uuid>
+VLESS_SHORT_ID=<16位hex>
+```
+
+`listen_address` 默认 `::`(IPv6/双栈,同时接受 IPv4 连接);主机无 IPv6 时请改为 `0.0.0.0`。
+
 ## 运维
 
 - 健康检查:`curl http://127.0.0.1:9090/healthz`(存活)、`/ready`(就绪)
 - 指标:`curl http://127.0.0.1:9090/metrics`(Prometheus 格式)
 - 日志:`journalctl -u go-reality -f -n 50`
+- 服务 enable 后若未填密钥即 start/重启,会因配置非法每 5s 重试刷日志(unit 配置 `Restart=on-failure` + `RestartSec=5s`)——属预期行为,填完密钥 `systemctl restart go-reality` 即可
 - 集成测试(真实出网,需可访问 www.apple.com 与 ifconfig.me):
 
 ```bash
