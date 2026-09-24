@@ -2,38 +2,43 @@
 
 嵌入 [xray-core](https://github.com/XTLS/Xray-core) 的 VLESS + REALITY 代理服务端,单二进制、systemd 守护、无外部依赖。
 
-## 快速开始(开发机)
+## 一键部署(推荐)
+
+开发机(任意有 bash + go 的机器)打包:
 
 ```bash
-# 1. 生成密钥(推荐带 -server 一并生成客户端分享链接)
-go run ./cmd/server keys generate -server <你的服务器IP或域名>
+make package        # → dist/go-reality-server-linux.tar.gz
+```
 
-# 2. 将输出填入 config.yaml(从 config.example.yaml 复制)
+服务器上两条命令:
+
+```bash
+tar xzf go-reality-server-linux.tar.gz
+sudo ./go-reality-server/bootstrap.sh
+```
+
+bootstrap.sh 全自动:安装二进制 → **现场生成密钥**(密钥永不出服务器)→ 启动 systemd 服务 → 防火墙放行 443 → 验证就绪 → 打印客户端分享链接。
+
+- 架构自动识别(x86_64/aarch64),可用 `--arch amd64|arm64` 覆盖
+- 分享链接中的服务器地址默认取出口 IP,可用 `--server <IP或域名>` 覆盖
+- **幂等**:重复执行只更新二进制与 unit,不会重置密钥;升级即重新打包上传再跑一次
+- 客户端资料(分享链接 + Clash Meta 配置)保存在 `/etc/go-reality/client.txt`(0600,仅 root):`sudo cat /etc/go-reality/client.txt`
+
+## 快速开始(开发机本地跑)
+
+```bash
 cp config.example.yaml config.yaml
-
-# 3. 运行
+# 生成密钥并注入当前 shell 环境(密钥不落盘)
+set -a; source <(go run ./cmd/server keys generate -format env); set +a
 go run ./cmd/server -config config.yaml
 ```
 
-## 部署到 Linux 服务器
-
-```bash
-# 本机交叉编译
-./scripts/cross-build.sh
-# 上传并安装(在服务器上)
-scp bin/go-reality-server-linux-amd64 user@server:/tmp/
-scp config.example.yaml deploy/install.sh deploy/systemd/go-reality.service user@server:/tmp/
-ssh user@server
-sudo bash /tmp/install.sh /tmp/go-reality-server-linux-amd64
-# 编辑 /etc/go-reality/config.yaml 填入密钥,重启
-sudo systemctl restart go-reality
-```
-
-若服务器开了 UFW:`sudo ufw allow 443/tcp`
+要客户端分享链接时加 `-server`:`go run ./cmd/server keys generate -format env -server 127.0.0.1`(注释区附 ShareLink 与 Clash 块)。
 
 ## 客户端接入
 
-`keys generate -server ...` 输出的 ShareLink 可直接导入:
+部署完成后 `sudo cat /etc/go-reality/client.txt` 拿到分享链接,可直接导入:
+
 - Clash Meta / Mihomo(支持 vless+reality)
 - v2rayN(Windows)
 - NekoBox(Android)
@@ -56,15 +61,14 @@ sudo systemctl restart go-reality
 
 `reality.dest` 需为支持 TLS 1.3 的目标;当前锁定依赖下 microsoft.com 不兼容(记录超限),默认 www.apple.com 已实测可用。
 
-### 安全建议
+### 权限模型(部署后)
 
-私钥等敏感字段建议放 `/etc/go-reality/env`(权限 `0600`,由 systemd 在切换用户前以 root 读取,unit 已配置 `EnvironmentFile`),而非默认 `0644`、所有用户可读的 `config.yaml`:
-
-```
-REALITY_PRIVATE_KEY=<base64>
-VLESS_UUID=<uuid>
-VLESS_SHORT_ID=<16位hex>
-```
+| 路径 | 权限 | 说明 |
+|---|---|---|
+| `/etc/go-reality/` | 0755 root | 服务以 DynamicUser(每次启动随机 uid)运行,目录须可进入 |
+| `config.yaml` | 0644 root | **不含任何密钥** |
+| `env` | 0600 root | 密钥唯一落点;systemd 以 root 读取后才降权 |
+| `client.txt` | 0600 root | 分享链接与 Clash 配置,仅 root 可读 |
 
 `listen_address` 默认 `::`(IPv6/双栈,同时接受 IPv4 连接);主机无 IPv6 时请改为 `0.0.0.0`。
 
@@ -73,7 +77,7 @@ VLESS_SHORT_ID=<16位hex>
 - 健康检查:`curl http://127.0.0.1:9090/healthz`(存活)、`/ready`(就绪)
 - 指标:`curl http://127.0.0.1:9090/metrics`(Prometheus 格式)
 - 日志:`journalctl -u go-reality -f -n 50`
-- 服务 enable 后若未填密钥即 start/重启,会因配置非法每 5s 重试刷日志(unit 配置 `Restart=on-failure` + `RestartSec=5s`)——属预期行为,填完密钥 `systemctl restart go-reality` 即可
+- 升级:开发机 `make package` → 上传 → `tar xzf` → `sudo ./go-reality-server/bootstrap.sh`(幂等,密钥不变)
 - 集成测试(真实出网,需可访问 www.apple.com 与 ifconfig.me):
 
 ```bash

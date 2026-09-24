@@ -1,5 +1,7 @@
 # go-reality-server 示例配置
-# 复制为 config.yaml 并填入密钥:go run ./cmd/server keys generate
+# 密钥(uuid/short_id/private_key)建议经环境变量注入、不落本文件:
+#   go run ./cmd/server keys generate -format env
+# 环境变量覆盖名单见 README;服务器部署由 deploy/bootstrap.sh 全自动处理。
 listen_address: "::"
 listen_port: 443
 
