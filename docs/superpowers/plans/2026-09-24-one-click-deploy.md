@@ -423,6 +423,11 @@ if [[ ! -f "$CONF_DIR/env" ]]; then
   umask 022
 fi
 
+# 用户裁决修正(2026-09-24):env 已存在时 --server 无效,须明示而非静默
+if [[ -f "$CONF_DIR/env" && -n "$SERVER_ADDR" ]]; then
+  echo "⚠️ 密钥已存在($CONF_DIR/env),--server $SERVER_ADDR 未生效;如需换新密钥与链接:rm $CONF_DIR/env 后重跑"
+fi
+
 echo "==> 安装 systemd unit"
 [[ -f "$PKG_DIR/go-reality.service" ]] || { echo "❌ 包内缺 go-reality.service" >&2; exit 1; }
 install -m 0644 "$PKG_DIR/go-reality.service" /etc/systemd/system/go-reality.service
@@ -434,7 +439,9 @@ else
 fi
 
 echo "==> 防火墙放行 443/tcp(仅当防火墙在运行)"
-if command -v ufw >/dev/null && ufw status 2>/dev/null | grep -q "Status: active"; then
+# 用户裁决修正(2026-09-24):ufw 输出会被 gettext 本地化,zh_CN 主机匹配不到
+# "Status: active",须 LC_ALL=C 强制英文输出
+if command -v ufw >/dev/null && LC_ALL=C ufw status 2>/dev/null | grep -q "Status: active"; then
   ufw allow 443/tcp
 elif command -v firewall-cmd >/dev/null && firewall-cmd --state 2>/dev/null | grep -q running; then
   firewall-cmd --permanent --add-port=443/tcp
