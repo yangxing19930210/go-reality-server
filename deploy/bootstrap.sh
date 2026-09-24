@@ -13,6 +13,7 @@ BIN_DST="/usr/local/bin/go-reality-server"
 CONF_DIR="/etc/go-reality"
 ARCH=""
 SERVER_ADDR=""
+SERVER_GIVEN=0
 
 usage() { sed -n '3,7p' "$0" | sed 's/^# \{0,1\}//'; }
 
@@ -20,8 +21,8 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --arch)     ARCH="${2:?--arch 需要值}"; shift 2 ;;
     --arch=*)   ARCH="${1#--arch=}"; shift ;;
-    --server)   SERVER_ADDR="${2:?--server 需要值}"; shift 2 ;;
-    --server=*) SERVER_ADDR="${1#--server=}"; shift ;;
+    --server)   SERVER_ADDR="${2:?--server 需要值}"; SERVER_GIVEN=1; shift 2 ;;
+    --server=*) SERVER_ADDR="${1#--server=}"; SERVER_GIVEN=1; shift ;;
     -h|--help)  usage; exit 0 ;;
     *) echo "未知参数: $1" >&2; exit 2 ;;
   esac
@@ -76,8 +77,8 @@ if [[ ! -f "$CONF_DIR/env" ]]; then
   umask 022
 fi
 
-if [[ -f "$CONF_DIR/env" && -n "$SERVER_ADDR" ]]; then
-  echo "⚠️ 密钥已存在($CONF_DIR/env),--server $SERVER_ADDR 未生效;如需换新密钥与链接:rm $CONF_DIR/env 后重跑"
+if [[ -f "$CONF_DIR/env" && "$SERVER_GIVEN" -eq 1 ]]; then
+  echo "⚠️ 密钥已存在($CONF_DIR/env),--server $SERVER_ADDR 未生效;如需换新密钥与链接:rm $CONF_DIR/env 后重跑" >&2
 fi
 
 echo "==> 安装 systemd unit"
