@@ -404,11 +404,10 @@ if [[ ! -f "$CONF_DIR/config.yaml" ]]; then
   install -m 0644 "$PKG_DIR/config.yaml" "$CONF_DIR/config.yaml"
 fi
 
+# env:密钥唯一落点。仅首次生成:0600 root,systemd 降权前以 root 读取
 # 警告判定用:脚本启动时 env 是否已存在(生成后无法区分本轮生成还是早已存在)
 ENV_PREEXISTED=0
 if [[ -f "$CONF_DIR/env" ]]; then ENV_PREEXISTED=1; fi
-
-# env:密钥唯一落点。仅首次生成:0600 root,systemd 降权前以 root 读取
 if [[ ! -f "$CONF_DIR/env" ]]; then
   if [[ -z "$SERVER_ADDR" ]]; then
     SERVER_ADDR="$(ip route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="src"){print $(i+1); exit}}')" || true
