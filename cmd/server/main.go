@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -23,13 +24,16 @@ import (
 )
 
 func main() {
-	// 子命令判断必须在 flag.Parse 之前
-	if len(os.Args) > 1 && os.Args[1] == "keys" {
-		if err := runKeysGenerate(os.Stdout, keysGenerateArgs(os.Args[2:])); err != nil {
-			fmt.Fprintln(os.Stderr, "error:", err)
-			os.Exit(2)
+	// 子命令分发:目前只有 keys;其余参数交给 run 的 flag 解析。
+	if len(os.Args) > 1 {
+		switch os.Args[1] {
+		case "keys":
+			if err := runKeysGenerate(os.Stdout, keysGenerateArgs(os.Args[2:])); err != nil {
+				fmt.Fprintln(os.Stderr, "error:", err)
+				os.Exit(2)
+			}
+			return
 		}
-		return
 	}
 	if err := run(os.Args[1:]); err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)
@@ -103,15 +107,22 @@ func keysGenerateArgs(args []string) []string {
 	return args
 }
 
-// runKeysGenerate 生成 UUID/short_id/X25519 密钥对,带 -server 时附分享链接。
+// runKeysGenerate 生成 UUID/short_id/X25519 密钥对并按 -format 渲染。
+// env 格式带 -server 时以 '#' 注释区附分享链接与 Clash 块——'#' 是
+// systemd EnvironmentFile 的合法注释语法,bootstrap 将非注释行原样落盘
+// 为 env 文件、注释行剥前缀后归入 client.txt,单次调用两用。
 func runKeysGenerate(w io.Writer, args []string) error {
 	fs := flag.NewFlagSet("keys generate", flag.ContinueOnError)
 	server := fs.String("server", "", "server address for share link, e.g. 1.2.3.4")
 	port := fs.Int("port", 443, "server port for share link")
 	sni := fs.String("sni", "www.apple.com", "SNI/server_name for share link")
 	name := fs.String("name", "go-reality-server", "name for share link")
+	format := fs.String("format", "text", "output format: text | env | clash")
 	if err := fs.Parse(args); err != nil {
 		return err
+	}
+	if *format == "clash" && *server == "" {
+		return fmt.Errorf("-format clash 需要同时指定 -server")
 	}
 
 	id := proxy.GenerateUUID()
@@ -120,14 +131,31 @@ func runKeysGenerate(w io.Writer, args []string) error {
 	if err != nil {
 		return err
 	}
-
-	fmt.Fprintf(w, "UUID:        %s\n", id)
-	fmt.Fprintf(w, "ShortID:     %s\n", sid)
-	fmt.Fprintf(w, "PrivateKey:  %s\n", kp.PrivateKeyB64())
-	fmt.Fprintf(w, "PublicKey:   %s\n", kp.PublicKeyB64())
+	link := ""
 	if *server != "" {
-		link := proxy.GenerateShareLink(*server, *port, id, sid, kp.PublicKeyB64(), *sni, *name)
-		fmt.Fprintf(w, "ShareLink:   %s\n", link)
+		link = proxy.GenerateShareLink(*server, *port, id, sid, kp.PublicKeyB64(), *sni, *name)
+	}
+
+	switch *format {
+	case "text":
+		fmt.Fprint(w, renderKeysText(id, sid, kp))
+		if link != "" {
+			fmt.Fprintf(w, "ShareLink:   %s\n", link)
+		}
+	case "env":
+		fmt.Fprint(w, renderKeysEnv(id, sid, kp))
+		if link != "" {
+			fmt.Fprintf(w, "# ShareLink: %s\n", link)
+			fmt.Fprintf(w, "# --- Clash Meta proxies: ---\n# proxies:\n")
+			for _, l := range strings.Split(renderClashProxy(*server, *port, id, sid, kp.PublicKeyB64(), *sni, *name), "\n") {
+				fmt.Fprintf(w, "# %s\n", l)
+			}
+		}
+	case "clash":
+		fmt.Fprintf(w, "proxies:\n%s\n", renderClashProxy(*server, *port, id, sid, kp.PublicKeyB64(), *sni, *name))
+		fmt.Fprintf(w, "# ShareLink: %s\n", link)
+	default:
+		return fmt.Errorf("unknown -format %q (text | env | clash)", *format)
 	}
 	return nil
 }
