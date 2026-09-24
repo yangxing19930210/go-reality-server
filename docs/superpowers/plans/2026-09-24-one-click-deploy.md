@@ -360,6 +360,7 @@ BIN_DST="/usr/local/bin/go-reality-server"
 CONF_DIR="/etc/go-reality"
 ARCH=""
 SERVER_ADDR=""
+SERVER_GIVEN=0
 
 usage() { sed -n '3,7p' "$0" | sed 's/^# \{0,1\}//'; }
 
@@ -367,8 +368,8 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --arch)     ARCH="${2:?--arch 需要值}"; shift 2 ;;
     --arch=*)   ARCH="${1#--arch=}"; shift ;;
-    --server)   SERVER_ADDR="${2:?--server 需要值}"; shift 2 ;;
-    --server=*) SERVER_ADDR="${1#--server=}"; shift ;;
+    --server)   SERVER_ADDR="${2:?--server 需要值}"; SERVER_GIVEN=1; shift 2 ;;
+    --server=*) SERVER_ADDR="${1#--server=}"; SERVER_GIVEN=1; shift ;;
     -h|--help)  usage; exit 0 ;;
     *) echo "未知参数: $1" >&2; exit 2 ;;
   esac
@@ -403,6 +404,10 @@ if [[ ! -f "$CONF_DIR/config.yaml" ]]; then
   install -m 0644 "$PKG_DIR/config.yaml" "$CONF_DIR/config.yaml"
 fi
 
+# 警告判定用:脚本启动时 env 是否已存在(生成后无法区分本轮生成还是早已存在)
+ENV_PREEXISTED=0
+if [[ -f "$CONF_DIR/env" ]]; then ENV_PREEXISTED=1; fi
+
 # env:密钥唯一落点。仅首次生成:0600 root,systemd 降权前以 root 读取
 if [[ ! -f "$CONF_DIR/env" ]]; then
   if [[ -z "$SERVER_ADDR" ]]; then
@@ -423,9 +428,11 @@ if [[ ! -f "$CONF_DIR/env" ]]; then
   umask 022
 fi
 
-# 用户裁决修正(2026-09-24):env 已存在时 --server 无效,须明示而非静默
-if [[ -f "$CONF_DIR/env" && -n "$SERVER_ADDR" ]]; then
-  echo "⚠️ 密钥已存在($CONF_DIR/env),--server $SERVER_ADDR 未生效;如需换新密钥与链接:rm $CONF_DIR/env 后重跑"
+# 用户裁决修正(2026-09-24):env 已存在时 --server 无效,须明示而非静默。
+# 双重条件:ENV_PREEXISTED(启动快照,防首跑误报)+ SERVER_GIVEN(显式标志,
+# SERVER_ADDR 会被自动探测填充)
+if [[ "$ENV_PREEXISTED" -eq 1 && "$SERVER_GIVEN" -eq 1 ]]; then
+  echo "⚠️ 密钥已存在($CONF_DIR/env),--server $SERVER_ADDR 未生效;如需换新密钥与链接:rm $CONF_DIR/env 后重跑" >&2
 fi
 
 echo "==> 安装 systemd unit"
