@@ -38,7 +38,7 @@ install -m 0755 "$BIN_SRC" "$INSTALL_DIR/go-reality-server"
 
 echo "==> 准备 /etc/go-reality"
 mkdir -p "$CONF_DIR"
-chmod 700 "$CONF_DIR"
+chmod 0755 "$CONF_DIR"
 
 # config: 仅在首次引导时安装包内预生成的 config.yaml
 if [[ ! -f "$CONF_DIR/config.yaml" && -f "$PKG_DIR/config.yaml" ]]; then
