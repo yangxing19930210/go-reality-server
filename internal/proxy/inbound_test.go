@@ -91,10 +91,10 @@ func TestBuildVLESSInbound(t *testing.T) {
 	}
 	var rc reality.Config
 	unmarshalTyped(t, ss.SecuritySettings[0], &rc)
-	if rc.Dest != "www.microsoft.com:443" {
+	if rc.Dest != "www.apple.com:443" {
 		t.Errorf("reality dest = %q", rc.Dest)
 	}
-	if len(rc.ServerNames) != 1 || rc.ServerNames[0] != "www.microsoft.com" {
+	if len(rc.ServerNames) != 1 || rc.ServerNames[0] != "www.apple.com" {
 		t.Errorf("server names = %v", rc.ServerNames)
 	}
 	privKey, err := cfg.Reality.PrivateKeyBytes()

@@ -108,7 +108,7 @@ func runKeysGenerate(w io.Writer, args []string) error {
 	fs := flag.NewFlagSet("keys generate", flag.ContinueOnError)
 	server := fs.String("server", "", "server address for share link, e.g. 1.2.3.4")
 	port := fs.Int("port", 443, "server port for share link")
-	sni := fs.String("sni", "www.microsoft.com", "SNI/server_name for share link")
+	sni := fs.String("sni", "www.apple.com", "SNI/server_name for share link")
 	name := fs.String("name", "go-reality-server", "name for share link")
 	if err := fs.Parse(args); err != nil {
 		return err

@@ -54,12 +54,14 @@ sudo systemctl restart go-reality
 | `HTTP_API_PORT` | `http_api.listen_port` |
 | `LOG_LEVEL` | `log_level` |
 
+`reality.dest` 需为支持 TLS 1.3 的目标;当前锁定依赖下 microsoft.com 不兼容(记录超限),默认 www.apple.com 已实测可用。
+
 ## 运维
 
 - 健康检查:`curl http://127.0.0.1:9090/healthz`(存活)、`/ready`(就绪)
 - 指标:`curl http://127.0.0.1:9090/metrics`(Prometheus 格式)
 - 日志:`journalctl -u go-reality -f -n 50`
-- 集成测试(真实出网,需可访问 www.microsoft.com 与 ifconfig.me):
+- 集成测试(真实出网,需可访问 www.apple.com 与 ifconfig.me):
 
 ```bash
 go test -tags=integration -count=1 ./internal/proxy/ -run TestIntegration -v

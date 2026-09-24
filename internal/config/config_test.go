@@ -39,7 +39,7 @@ func TestLoadDefaults(t *testing.T) {
 	if cfg.ListenAddress != "::" {
 		t.Errorf("ListenAddress = %q, want \"::\"", cfg.ListenAddress)
 	}
-	if cfg.Reality.Dest != "www.microsoft.com:443" {
+	if cfg.Reality.Dest != "www.apple.com:443" {
 		t.Errorf("Dest = %q, want default", cfg.Reality.Dest)
 	}
 	if cfg.HTTPAPI.ListenPort != 9090 {

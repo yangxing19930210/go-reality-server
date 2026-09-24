@@ -51,8 +51,8 @@ func Defaults() ServerConfig {
 		ListenAddress: "::",
 		ListenPort:    443,
 		Reality: RealityConfig{
-			Dest:        "www.microsoft.com:443",
-			ServerNames: []string{"www.microsoft.com"},
+			Dest:        "www.apple.com:443",
+			ServerNames: []string{"www.apple.com"},
 		},
 		HTTPAPI: HTTPAPIConfig{
 			ListenAddress: "127.0.0.1",

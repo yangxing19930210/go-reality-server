@@ -10,8 +10,8 @@ vless:
 
 reality:
   private_key: ""             # 必填,X25519 私钥(base64url 或 std)
-  dest: "www.microsoft.com:443"   # 握手伪装目标
-  server_names: ["www.microsoft.com"]
+  dest: "www.apple.com:443"   # 握手伪装目标;默认 apple,注意 microsoft.com 与当前锁定的 xtls/reality 8192 字节记录上限不兼容(握手记录 8273 字节会被拒)
+  server_names: ["www.apple.com"]
   short_ids: []               # 留空则复用 vless.short_id
   x25519_pub: ""              # 非必填,仅用于生成客户端分享链接
 
