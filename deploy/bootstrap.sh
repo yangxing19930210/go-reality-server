@@ -15,7 +15,7 @@ ARCH=""
 SERVER_ADDR=""
 SERVER_GIVEN=0
 
-usage() { sed -n '3,7p' "$0" | sed 's/^# \{0,1\}//'; }
+usage() { sed -n '4,8p' "$0" | sed 's/^# \{0,1\}//'; }
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -40,7 +40,7 @@ fi
 BIN_SRC="$PKG_DIR/go-reality-server-linux-$ARCH"
 if [[ ! -f "$BIN_SRC" ]]; then
   echo "❌ 没找到 $BIN_SRC" >&2
-  ls "$PKG_DIR"/go-reality-server-linux-* 2>/dev/null | sed 's/^/   - /' >&2
+  ls "$PKG_DIR"/go-reality-server-linux-* 2>/dev/null | sed 's/^/   - /' >&2 || true
   exit 1
 fi
 
@@ -105,11 +105,20 @@ fi
 echo "==> 等待服务就绪(最多 15s)"
 ok=""
 for _ in $(seq 1 15); do
-  if curl -fsS http://127.0.0.1:9090/ready >/dev/null 2>&1; then ok=1; break; fi
+  if command -v curl >/dev/null; then
+    curl -fsS --max-time 2 http://127.0.0.1:9090/ready >/dev/null 2>&1 && ok=1
+  else
+    systemctl is-active --quiet go-reality && ok=1
+  fi
+  [[ -n "$ok" ]] && break
   sleep 1
 done
 if [[ -z "$ok" ]]; then
-  echo "❌ 服务未就绪。日志:journalctl -u go-reality -n 50 --no-pager" >&2
+  if command -v curl >/dev/null; then
+    echo "❌ 服务未就绪:curl -fsS --max-time 2 http://127.0.0.1:9090/ready 15s 内未通过。日志:journalctl -u go-reality -n 50 --no-pager" >&2
+  else
+    echo "❌ 服务未就绪:systemctl is-active go-reality 15s 内未通过(本机无 curl,未探测 /ready)。日志:journalctl -u go-reality -n 50 --no-pager" >&2
+  fi
   systemctl status go-reality --no-pager >&2 || true
   exit 1
 fi
@@ -127,4 +136,6 @@ if [[ -f "$CONF_DIR/client.txt" ]]; then
     echo "   分享链接(可直接导入 Clash Meta / v2rayN / NekoBox):"
     echo "   $SHARE"
   fi
+else
+  echo "   ⚠️ client.txt 缺失(旧版升级部署?),客户端资料无法重建;如需重建:rm $CONF_DIR/env 后重跑(会重新生成密钥)" >&2
 fi

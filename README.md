@@ -21,6 +21,7 @@ bootstrap.sh 全自动:安装二进制 → **现场生成密钥**(密钥永不�
 
 - 架构自动识别(x86_64/aarch64),可用 `--arch amd64|arm64` 覆盖
 - 分享链接中的服务器地址默认取出口 IP,可用 `--server <IP或域名>` 覆盖
+- NAT/内网主机:自动探测取到的是内网地址,请务必用 `--server <公网IP或域名>` 指定
 - **幂等**:重复执行只更新二进制与 unit,不会重置密钥;升级即重新打包上传再跑一次
 - 客户端资料(分享链接 + Clash Meta 配置)保存在 `/etc/go-reality/client.txt`(0600,仅 root):`sudo cat /etc/go-reality/client.txt`
 

@@ -122,7 +122,7 @@ func runKeysGenerate(w io.Writer, args []string) error {
 		return err
 	}
 	if *format == "clash" && *server == "" {
-		return fmt.Errorf("-format clash 需要同时指定 -server")
+		return errors.New("-format clash 需要同时指定 -server")
 	}
 
 	id := proxy.GenerateUUID()
@@ -135,6 +135,7 @@ func runKeysGenerate(w io.Writer, args []string) error {
 	if *server != "" {
 		link = proxy.GenerateShareLink(*server, *port, id, sid, kp.PublicKeyB64(), *sni, *name)
 	}
+	clash := renderClashProxy(*server, *port, id, sid, kp.PublicKeyB64(), *sni, *name)
 
 	switch *format {
 	case "text":
@@ -147,12 +148,12 @@ func runKeysGenerate(w io.Writer, args []string) error {
 		if link != "" {
 			fmt.Fprintf(w, "# ShareLink: %s\n", link)
 			fmt.Fprintf(w, "# --- Clash Meta proxies: ---\n# proxies:\n")
-			for _, l := range strings.Split(renderClashProxy(*server, *port, id, sid, kp.PublicKeyB64(), *sni, *name), "\n") {
+			for _, l := range strings.Split(clash, "\n") {
 				fmt.Fprintf(w, "# %s\n", l)
 			}
 		}
 	case "clash":
-		fmt.Fprintf(w, "proxies:\n%s\n", renderClashProxy(*server, *port, id, sid, kp.PublicKeyB64(), *sni, *name))
+		fmt.Fprintf(w, "proxies:\n%s\n", clash)
 		fmt.Fprintf(w, "# ShareLink: %s\n", link)
 	default:
 		return fmt.Errorf("unknown -format %q (text | env | clash)", *format)
