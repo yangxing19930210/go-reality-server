@@ -41,8 +41,12 @@ func buildVLESSInbound(cfg *config.ServerConfig) (*core.InboundHandlerConfig, er
 	})
 
 	// REALITY 安全层:挂 StreamConfig.SecuritySettings,类型名取自 TypedMessage.Type
+	// Type 是上游 reality.Server 拨 Dest 用的网络类型(xray JSON 层会从 dest
+	// 是否 host:port 推导出 "tcp";直接构造 proto 必须显式设置,否则
+	// DialContext(ctx, "", dest) 报 "dial: unknown network")。
 	realityMsg := serial.ToTypedMessage(&reality.Config{
 		Dest:        cfg.Reality.Dest,
+		Type:        "tcp",
 		ServerNames: cfg.Reality.ServerNames,
 		PrivateKey:  privKey,
 		ShortIds:    shortIDs,
