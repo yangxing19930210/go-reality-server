@@ -9,6 +9,11 @@ ExecStart=/usr/local/bin/go-reality-server -config /etc/go-reality/config.yaml
 EnvironmentFile=/etc/go-reality/env
 Restart=on-failure
 RestartSec=5s
+
+# 高并发必需:放开 fd 限制,否则 systemd 默认 1024 把连接弄到 ACCEPT 队列外
+LimitNOFILE=1048576
+
+# 非 root 绑 443 + Defense-in-depth
 DynamicUser=yes
 ConfigurationDirectory=go-reality
 AmbientCapabilities=CAP_NET_BIND_SERVICE
@@ -16,6 +21,14 @@ NoNewPrivileges=yes
 ProtectSystem=strict
 ProtectHome=yes
 PrivateTmp=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+RestrictSUIDSGID=true
+LockPersonality=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+SystemCallArchitectures=native
+
 StandardOutput=journal
 StandardError=journal
 
