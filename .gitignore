@@ -2,3 +2,6 @@
 *.exe
 config.yaml
 /dist/
+/.idea/
+/.superpowers/
+/.claude/settings.local.json
